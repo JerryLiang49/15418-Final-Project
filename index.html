@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -8,59 +8,158 @@
 </head>
 <body>
   <div class="container">
-    <header>
-      <h1>Project Title</h1>
-      <p class="subtitle">Jerry Liang, Harry ___ | 15-418/15-618 | Spring 2026</p>
-    </header>
-
-    <section>
-      <h2>Overview</h2>
-      <p>
-        Briefly describe the problem, what you implemented, and what you are evaluating.
-      </p>
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">15-418 / 15-618 Project Website</div>
+        <h1>[Project Title Here]</h1>
+        <p class="subtitle"><strong>Team Members:</strong> [Name 1], [Name 2]</p>
+        <div class="quick-links">
+          <span class="pill"><strong>Project URL:</strong>&nbsp;[Paste website URL here]</span>
+          <span class="pill"><strong>Platform:</strong>&nbsp;[CPU / GPU / OpenMP / CUDA / MPI / etc.]</span>
+        </div>
+      </div>
     </section>
 
-    <section>
-      <h2>Motivation</h2>
-      <p>
-        Explain why this is an interesting parallel computing problem.
-      </p>
+    <section class="grid">
+      <aside class="toc">
+        <h2>Sections</h2>
+        <ul>
+          <li><a href="#summary">Summary</a></li>
+          <li><a href="#background">Background</a></li>
+          <li><a href="#challenge">The Challenge</a></li>
+          <li><a href="#resources">Resources</a></li>
+          <li><a href="#goals">Goals and Deliverables</a></li>
+          <li><a href="#platform">Platform Choice</a></li>
+          <li><a href="#schedule">Schedule</a></li>
+        </ul>
+      </aside>
+
+      <main class="content">
+        <section class="card" id="summary">
+          <h2>Summary</h2>
+          <p class="placeholder">Placeholder: Write a 2–3 sentence project summary here. Briefly state what you plan to build, what you will evaluate, and which parallel systems or hardware platforms you will use.</p>
+        </section>
+
+        <section class="card" id="background">
+          <h2>Background</h2>
+          <p class="placeholder">Placeholder: Add a few paragraphs describing the application, algorithm, or system in more detail. Explain what the computation is doing and why this workload may benefit from parallelism.</p>
+          <div class="two-col">
+            <div class="mini">
+              <h3>Possible content</h3>
+              <ul>
+                <li>Short application description</li>
+                <li>What the core computation looks like</li>
+                <li>Where the parallel work comes from</li>
+              </ul>
+            </div>
+            <div class="mini">
+              <h3>Optional additions</h3>
+              <ul>
+                <li>Block diagram</li>
+                <li>Pseudocode snippet</li>
+                <li>Example input/output</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" id="challenge">
+          <h2>The Challenge</h2>
+          <p class="placeholder">Placeholder: Explain why the problem is hard to parallelize well. Discuss dependencies, memory access patterns, locality, communication/computation ratio, divergence, synchronization, and any properties of the target system that make the mapping challenging.</p>
+          <div class="two-col">
+            <div class="mini">
+              <h3>Workload characteristics</h3>
+              <ul>
+                <li>Dependencies</li>
+                <li>Memory locality / irregularity</li>
+                <li>Communication overhead</li>
+                <li>Divergent execution</li>
+              </ul>
+            </div>
+            <div class="mini">
+              <h3>System constraints</h3>
+              <ul>
+                <li>Core or thread organization</li>
+                <li>Memory hierarchy limits</li>
+                <li>Synchronization cost</li>
+                <li>Load balancing challenges</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" id="resources">
+          <h2>Resources</h2>
+          <p class="placeholder">Placeholder: List the computers, GPUs, lab machines, starter code, codebases, datasets, papers, and references you plan to use. Mention whether you are starting from scratch or building on existing code.</p>
+        </section>
+
+        <section class="card" id="goals">
+          <h2>Goals and Deliverables</h2>
+          <div class="two-col">
+            <div class="mini">
+              <h3>Plan to Achieve</h3>
+              <p class="placeholder">Placeholder: Describe the minimum successful outcome for the project. State the implementation goals, evaluation goals, and any expected speedup or functionality targets.</p>
+            </div>
+            <div class="mini">
+              <h3>Hope to Achieve</h3>
+              <p class="placeholder">Placeholder: Describe stretch goals if the project goes especially well, and fallback goals if progress is slower than expected.</p>
+            </div>
+          </div>
+          <div class="mini section-gap">
+            <h3>Optional Demo / Analysis Questions</h3>
+            <p class="placeholder">Placeholder: Briefly describe a possible live demo, or list the main analysis questions you want your experiments to answer.</p>
+          </div>
+        </section>
+
+        <section class="card" id="platform">
+          <h2>Platform Choice</h2>
+          <p class="placeholder">Placeholder: Explain why your selected platform is a good fit for this workload. Discuss why the machine model, programming model, or language makes sense for the kind of parallelism you want to exploit.</p>
+        </section>
+
+        <section class="card" id="schedule">
+          <h2>Schedule</h2>
+          <p class="placeholder">Placeholder: Fill in one item per week from now until the final presentation or poster session. Be specific about what will be implemented, measured, debugged, or written each week.</p>
+          <table class="schedule-table">
+            <thead>
+              <tr>
+                <th>Week</th>
+                <th>Planned Tasks</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Week 1</td>
+                <td>[Placeholder: choose final idea, gather references, set up repo and baseline code]</td>
+              </tr>
+              <tr>
+                <td>Week 2</td>
+                <td>[Placeholder: implement serial baseline and initial parallel version]</td>
+              </tr>
+              <tr>
+                <td>Week 3</td>
+                <td>[Placeholder: benchmark, debug correctness, start optimization passes]</td>
+              </tr>
+              <tr>
+                <td>Week 4</td>
+                <td>[Placeholder: complete milestone report experiments and analysis]</td>
+              </tr>
+              <tr>
+                <td>Week 5</td>
+                <td>[Placeholder: add optimizations / stretch goal implementation]</td>
+              </tr>
+              <tr>
+                <td>Week 6</td>
+                <td>[Placeholder: finalize experiments, write report, prepare poster/website]</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </main>
     </section>
 
-    <section>
-      <h2>Approach</h2>
-      <p>
-        Describe the algorithm or system, your baselines, and your main design choices.
-      </p>
-    </section>
-
-    <section>
-      <h2>Implementation</h2>
-      <ul>
-        <li>Language: C++</li>
-        <li>Parallel framework: OpenMP / CUDA / pthreads</li>
-        <li>Hardware: fill this in later</li>
-      </ul>
-    </section>
-
-    <section>
-      <h2>Results</h2>
-      <img src="assets/speedup.png" alt="Speedup plot" class="figure" />
-      <p>
-        Add one or two sentences explaining the graph.
-      </p>
-    </section>
-
-    <section>
-      <h2>Reports and Links</h2>
-      <ul>
-        <li><a href="reports/proposal.pdf">Proposal</a></li>
-        <li><a href="reports/milestone.pdf">Milestone Report</a></li>
-        <li><a href="reports/final.pdf">Final Report</a></li>
-        <li><a href="reports/poster.pdf">Poster</a></li>
-        <li><a href="https://github.com/YOUR_USERNAME/YOUR_REPO">Source Code</a></li>
-      </ul>
-    </section>
+    <footer>
+      Replace each placeholder block with your proposal content. This template already includes all required sections for the 15-418 project page.
+    </footer>
   </div>
 </body>
 </html>
