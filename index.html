@@ -220,6 +220,113 @@
       font-size: 0.95rem;
     }
 
+    #goals .two-col {
+      align-items: stretch;
+    }
+
+    #goals .mini {
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.045));
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.18);
+      padding: 22px;
+    }
+
+    #goals .mini h3 {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      font-size: 1.05rem;
+    }
+
+    #goals .mini h3::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 6px rgba(124,199,255,0.12);
+      flex: 0 0 auto;
+    }
+
+    #goals .mini p {
+      margin-bottom: 0;
+    }
+
+    #goals .mini ul {
+      margin: 12px 0 14px;
+      padding-left: 0;
+      list-style: none;
+      display: grid;
+      gap: 12px;
+    }
+
+    #goals .mini li {
+      position: relative;
+      padding-left: 22px;
+      margin: 0;
+      color: var(--text);
+    }
+
+    #goals .mini li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--accent);
+      font-size: 1.1rem;
+      line-height: 1.2;
+    }
+
+    #goals .section-gap {
+      margin-top: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.04));
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.16);
+      padding: 22px;
+    }
+
+    #schedule .card,
+    #schedule.card {
+      overflow: hidden;
+    }
+
+    .schedule-table {
+      margin-top: 18px;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .schedule-table th {
+      background: rgba(255,255,255,0.09);
+      font-size: 0.98rem;
+      letter-spacing: 0.01em;
+    }
+
+    .schedule-table td {
+      padding-top: 18px;
+      padding-bottom: 18px;
+      line-height: 1.7;
+    }
+
+    .schedule-table td:first-child {
+      width: 200px;
+      font-weight: 700;
+      color: var(--text);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .schedule-table tr:hover td {
+      background: rgba(255,255,255,0.035);
+    }
+
+    .schedule-table tr:hover td:first-child {
+      background: rgba(124,199,255,0.08);
+    }
+
+    .schedule-table tr + tr td:first-child {
+      border-top: 1px solid rgba(255,255,255,0.02);
+    }
+
     @media (max-width: 900px) {
       .grid {
         grid-template-columns: 1fr;
@@ -239,12 +346,12 @@
   <div class="container">
     <section class="hero">
       <div class="hero-card">
-        <div class="eyebrow">15-418 / 15-618 Project Website</div>
+        <div class="eyebrow">15-418 Project Website</div>
         <h1>Parallel Graph Coloring</h1>
         <p class="subtitle"><strong>Team Members:</strong> Zhanming (Jerry) Liang, Harry Hu</p>
         <div class="quick-links">
           <span class="pill"><strong>Project URL:</strong>&nbsp;[Paste website URL here]</span>
-          <span class="pill"><strong>Platform:</strong>&nbsp;[CPU / GPU / OpenMP / CUDA / MPI /]</span>
+          <span class="pill"><strong>Platform:</strong>&nbsp;[CPU / GPU / OpenMP / CUDA / MPI]</span>
         </div>
       </div>
     </section>
@@ -420,9 +527,6 @@
       </main>
     </section>
 
-    <footer>
-      Replace each placeholder block with your proposal content. This template already includes all required sections for the 15-418 project page.
-    </footer>
   </div>
 </body>
 </html>
