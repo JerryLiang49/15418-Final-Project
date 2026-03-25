@@ -3,19 +3,248 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>15-418 Project Website</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>15-418 Project Website Template</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: rgba(255,255,255,0.08);
+      --panel-strong: rgba(255,255,255,0.12);
+      --text: #e8ecf3;
+      --muted: #b7c0d1;
+      --accent: #7cc7ff;
+      --accent-2: #9b8cff;
+      --border: rgba(255,255,255,0.12);
+      --shadow: 0 18px 50px rgba(0,0,0,0.28);
+      --maxw: 1100px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(124,199,255,0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(155,140,255,0.14), transparent 24%),
+        linear-gradient(180deg, #0a0f1d 0%, #0e1326 45%, #0a1020 100%);
+      min-height: 100vh;
+      line-height: 1.65;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container {
+      width: min(calc(100% - 32px), var(--maxw));
+      margin: 0 auto;
+    }
+
+    .hero {
+      padding: 72px 0 40px;
+    }
+
+    .hero-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.07));
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 36px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(124,199,255,0.12);
+      color: var(--accent);
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2.2rem, 4vw, 3.8rem);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.06rem;
+      max-width: 760px;
+    }
+
+    .quick-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+      margin: 24px 0 64px;
+    }
+
+    .toc {
+      position: sticky;
+      top: 20px;
+      padding: 18px;
+      border-radius: 22px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .toc h2 {
+      margin: 0 0 14px;
+      font-size: 1rem;
+    }
+
+    .toc ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .toc li { margin: 8px 0; }
+
+    .content {
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+    }
+
+    .card p,
+    .card li {
+      color: var(--muted);
+      margin-top: 0;
+    }
+
+    .placeholder {
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px dashed rgba(124,199,255,0.35);
+      background: rgba(124,199,255,0.08);
+      color: #dbeeff;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .mini {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .mini h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+    }
+
+    .mini ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .schedule-table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+    }
+
+    .schedule-table th,
+    .schedule-table td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .schedule-table th {
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    .schedule-table td {
+      color: var(--muted);
+    }
+
+    .schedule-table tr:last-child td { border-bottom: none; }
+
+    footer {
+      padding: 0 0 48px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .toc {
+        position: static;
+      }
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+      .hero-card,
+      .card { padding: 22px; }
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <section class="hero">
       <div class="hero-card">
         <div class="eyebrow">15-418 / 15-618 Project Website</div>
-        <h1>[Project Title Here]</h1>
-        <p class="subtitle"><strong>Team Members:</strong> [Name 1], [Name 2]</p>
+        <h1>Parallel Graph Coloring</h1>
+        <p class="subtitle"><strong>Team Members:</strong> Zhanming (Jerry) Liang, Harry Hu</p>
         <div class="quick-links">
           <span class="pill"><strong>Project URL:</strong>&nbsp;[Paste website URL here]</span>
-          <span class="pill"><strong>Platform:</strong>&nbsp;[CPU / GPU / OpenMP / CUDA / MPI / etc.]</span>
+          <span class="pill"><strong>Platform:</strong>&nbsp;[CPU / GPU / OpenMP / CUDA / MPI /]</span>
         </div>
       </div>
     </section>
@@ -37,12 +266,22 @@
       <main class="content">
         <section class="card" id="summary">
           <h2>Summary</h2>
-          <p class="placeholder">Placeholder: Write a 2–3 sentence project summary here. Briefly state what you plan to build, what you will evaluate, and which parallel systems or hardware platforms you will use.</p>
+          <p>We plan to implement and evaluate parallel graph coloring algorithms on multicore CPU systems using OpenMP. Our project will focus on speculative parallel coloring and conflict resolution, and we will study how graph structure, synchronization overhead, and load imbalance affect scalability and coloring quality. As a stretch goal, we may explore an additional implementation variant or a lightweight GPU comparison if time permits.</p>
         </section>
 
         <section class="card" id="background">
           <h2>Background</h2>
-          <p class="placeholder">Placeholder: Add a few paragraphs describing the application, algorithm, or system in more detail. Explain what the computation is doing and why this workload may benefit from parallelism.</p>
+          <p>Graph coloring is the problem of assigning a color to each vertex in a graph such that no two adjacent vertices share the same color. While the optimization version that minimizes the total number of colors is NP-hard, many practical systems rely on heuristic coloring algorithms that trade optimality for speed. Graph coloring appears in applications such as register allocation in compilers, scheduling, sparse matrix computations, and resource assignment problems, where conflicting tasks or objects cannot share the same resource.</p>
+          <p>Our project will focus on parallelizing greedy-style graph coloring algorithms. A standard sequential greedy algorithm processes vertices one at a time and assigns each vertex the smallest color not currently used by one of its already-colored neighbors. This is simple and often effective, but it is inherently sequential and becomes slow on large graphs. Parallel graph coloring algorithms instead allow multiple vertices to be colored concurrently, often using speculative execution where vertices are tentatively colored in parallel and conflicts are detected afterward, and conflicting vertices are recolored in later rounds.</p>
+          <p>This workload can benefit from parallelism because large graphs contain many vertices whose coloring work can be attempted simultaneously, especially when those vertices are far apart in the graph or when conflicts are rare. At the same time, graph coloring is not embarrassingly parallel. Dependencies between adjacent vertices mean that correctness must be maintained through conflict detection, priorities, or recoloring. This makes graph coloring a good fit for the course, since it sits between trivially parallel and fully sequential computation and raises meaningful questions about synchronization, load balance, and work efficiency.</p>
+          <p>At a high level, our implementation plan is:</p>
+          <ol>
+            <li>Build a sequential greedy coloring baseline.</li>
+            <li>Implement one or more parallel coloring strategies in OpenMP.</li>
+            <li>Detect conflicts between adjacent same-colored vertices.</li>
+            <li>Resolve conflicts and repeat until the coloring is valid.</li>
+            <li>Measure speedup, conflict rate, recoloring work, and color count across different graph classes.</li>
+          </ol>
           <div class="two-col">
             <div class="mini">
               <h3>Possible content</h3>
@@ -65,7 +304,16 @@
 
         <section class="card" id="challenge">
           <h2>The Challenge</h2>
-          <p class="placeholder">Placeholder: Explain why the problem is hard to parallelize well. Discuss dependencies, memory access patterns, locality, communication/computation ratio, divergence, synchronization, and any properties of the target system that make the mapping challenging.</p>
+          <p>The main challenge in parallel graph coloring is that the color chosen for a vertex depends on the colors of its neighbors, so adjacent vertices cannot always be colored independently. If two neighboring vertices are processed in parallel, they may both choose the same color, creating a conflict that must be fixed later. This creates a fundamental tradeoff of allowing more optimistic parallelism, which increases concurrency, but it may also increase the amount of wasted work from recoloring.</p>
+          <p>The workload is irregular in several ways. Graphs often have highly uneven degree distributions, so some vertices require much more work than others. This can lead to load imbalance across threads, especially on real-world graphs such as social or web networks. The memory access pattern is also irregular since coloring a vertex requires traversing its adjacency list, which may point to data scattered throughout memory. As a result, locality can be poor, and performance may be limited more by memory access and cache behavior than by raw arithmetic throughput. Since conflict detection often requires scanning neighbors or edges after a coloring round, there is also repeated graph traversal overhead.</p>
+          <p>Another challenge is synchronization and correctness. We need to decide how threads coordinate when they tentatively color vertices and how conflicts are resolved. Too much synchronization can destroy performance, while too little can create a large number of recoloring rounds. We also want to understand the quality-performance tradeoff: more aggressive parallelization may reduce runtime but increase the total number of colors used or the amount of redundant work.</p>
+          <p>The main questions we hope to learn from this project are:</p>
+          <ul>
+            <li>How well does speculative graph coloring scale on multicore CPUs?</li>
+            <li>How much does graph structure affect conflict rate and speedup?</li>
+            <li>What are the main bottlenecks: load imbalance, memory locality, synchronization, or recoloring overhead?</li>
+            <li>How large is the tradeoff between runtime and coloring quality?</li>
+          </ul>
           <div class="two-col">
             <div class="mini">
               <h3>Workload characteristics</h3>
@@ -90,7 +338,11 @@
 
         <section class="card" id="resources">
           <h2>Resources</h2>
-          <p class="placeholder">Placeholder: List the computers, GPUs, lab machines, starter code, codebases, datasets, papers, and references you plan to use. Mention whether you are starting from scratch or building on existing code.</p>
+          <p>We plan to implement our code in C++ from scratch and use OpenMP for multicore parallelism. We will develop primarily on the GHC machines and, if available, use PSC machines for larger-scale evaluation with more cores. Our graph representation will likely use adjacency lists in CSR or a similar compact format to support efficient traversal.</p>
+          <p>We will use real-world and synthetic graph datasets for evaluation. Candidate graph types include social networks, web graphs, road networks, and randomly generated graphs, since these graph families have very different degree distributions and structural properties. This should allow us to study how algorithm behavior changes across different workloads.</p>
+          <p>We expect to start from scratch rather than using an existing codebase, since implementing the baseline and parallel variants ourselves will make it easier to reason about correctness and measure the effects of different design choices. For references, we plan to use prior work on scalable parallel graph coloring, especially:</p>
+          <p><em>Gebremedhin, A. H., and Manne, F. “Scalable Parallel Graph Coloring Algorithms.” Concurrency: Practice and Experience, 12(12), 2000.</em></p>
+          <p>We may also consult more recent graph coloring and graph processing papers depending on which specific parallel strategy we settle on.</p>
         </section>
 
         <section class="card" id="goals">
@@ -98,27 +350,42 @@
           <div class="two-col">
             <div class="mini">
               <h3>Plan to Achieve</h3>
-              <p class="placeholder">Placeholder: Describe the minimum successful outcome for the project. State the implementation goals, evaluation goals, and any expected speedup or functionality targets.</p>
+              <p>Our main goal is to implement and evaluate a working parallel graph coloring system on multicore CPUs. At minimum, we plan to:</p>
+              <ul>
+                <li>Implement a correct sequential greedy graph coloring baseline in C++.</li>
+                <li>Implement at least one OpenMP-based parallel graph coloring algorithm using speculative coloring and conflict resolution.</li>
+                <li>Evaluate the implementation on multiple graph families and measure runtime, speedup, conflict count, recoloring work, and number of colors used.</li>
+                <li>Analyze how graph structure affects scalability and identify the main sources of performance loss.</li>
+              </ul>
+              <p>We expect a successful project to show meaningful speedup over the sequential baseline on sufficiently large graphs, while also demonstrating a thoughtful analysis of when parallel graph coloring works well and when it struggles. We do not want to promise a specific speedup number too early, since the outcome depends heavily on graph structure and implementation choices, but we expect the parallel version to outperform the sequential baseline on large enough inputs.</p>
             </div>
             <div class="mini">
               <h3>Hope to Achieve</h3>
-              <p class="placeholder">Placeholder: Describe stretch goals if the project goes especially well, and fallback goals if progress is slower than expected.</p>
+              <p>If the project goes well, we would like to:</p>
+              <ul>
+                <li>Implement and compare more than one parallel coloring strategy, such as different conflict resolution policies or ordering heuristics.</li>
+                <li>Explore whether graph preprocessing or vertex ordering can reduce conflict rates and improve scalability.</li>
+                <li>Compare the behavior of the algorithm on very different graph classes and characterize which classes are more parallel-friendly.</li>
+                <li>Possibly explore a lightweight GPU version or additional platform comparison as a stretch goal, if time permits.</li>
+              </ul>
+              <p>If implementation takes longer than expected, we will narrow the project to a strong sequential baseline, one carefully implemented OpenMP parallel version, and a solid evaluation on several graph types with speedup and bottleneck analysis. That would still be a successful project because the main value lies not only in building multiple implementations, but in understanding the performance tradeoffs of a nontrivial parallel graph workload.</p>
             </div>
           </div>
-          <div class="mini section-gap">
+          <div class="mini" style="margin-top: 16px;">
             <h3>Optional Demo / Analysis Questions</h3>
-            <p class="placeholder">Placeholder: Briefly describe a possible live demo, or list the main analysis questions you want your experiments to answer.</p>
+            <p>Our final deliverables will include a sequential greedy graph coloring implementation, one or more parallel OpenMP graph coloring implementations, experimental evaluation across several graph families and thread counts, a final report analyzing speedup, work efficiency, conflict behavior, and coloring quality, and a project website and poster summarizing our implementation and findings. We may also include a live demo at the poster session showing the coloring process or benchmark results on representative graphs, though our main focus will be on experimental evaluation rather than a demo.</p>
           </div>
         </section>
 
         <section class="card" id="platform">
           <h2>Platform Choice</h2>
-          <p class="placeholder">Placeholder: Explain why your selected platform is a good fit for this workload. Discuss why the machine model, programming model, or language makes sense for the kind of parallelism you want to exploit.</p>
+          <p>We chose a shared-memory multicore CPU platform with OpenMP because it is a natural fit for the graph coloring workload and aligns well with techniques covered in class. Graph coloring requires frequent access to neighboring vertices’ colors, so a shared-memory model avoids the complexity and duplication that would come with distributed-memory implementations. OpenMP also provides a practical framework for parallelizing irregular workloads while letting us experiment with scheduling strategies and synchronization choices.</p>
+          <p>C++ is a good choice because it gives us control over graph representation, memory layout, and performance-critical implementation details. Since graph coloring performance is likely to be influenced by cache behavior, contention, and adjacency traversal overhead, using a low-level language makes it easier to optimize and analyze these effects. Overall, a multicore CPU implementation is the right balance of ambition and feasibility for this project: the problem is irregular enough to be interesting, but still tractable with the tools and systems we have used in class.</p>
         </section>
 
         <section class="card" id="schedule">
           <h2>Schedule</h2>
-          <p class="placeholder">Placeholder: Fill in one item per week from now until the final presentation or poster session. Be specific about what will be implemented, measured, debugged, or written each week.</p>
+          <p>We will complete all implementation, experiments, analysis, report writing, and presentation materials before the April 24 presentation.</p>
           <table class="schedule-table">
             <thead>
               <tr>
@@ -128,28 +395,24 @@
             </thead>
             <tbody>
               <tr>
-                <td>Week 1</td>
-                <td>[Placeholder: choose final idea, gather references, set up repo and baseline code]</td>
+                <td>Week 1: March 24 – March 30</td>
+                <td>Finalize project scope and choose the specific parallel graph coloring approach to implement; set up repository, build system, and testing framework; implement and validate a sequential greedy graph coloring baseline; gather initial graph datasets and build input parsing utilities.</td>
               </tr>
               <tr>
-                <td>Week 2</td>
-                <td>[Placeholder: implement serial baseline and initial parallel version]</td>
+                <td>Week 2: March 31 – April 6</td>
+                <td>Implement the first OpenMP-based parallel graph coloring version; add correctness checks for valid coloring and color count; run initial benchmarks on small and medium graphs; identify early bottlenecks in synchronization, conflict handling, and load balance.</td>
               </tr>
               <tr>
-                <td>Week 3</td>
-                <td>[Placeholder: benchmark, debug correctness, start optimization passes]</td>
+                <td>Week 3: April 7 – April 13</td>
+                <td>Improve conflict detection and conflict resolution logic; add instrumentation for conflict counts, recoloring rounds, runtime breakdowns, and color count; benchmark across different graph families and thread counts; start analyzing how graph structure affects performance.</td>
               </tr>
               <tr>
-                <td>Week 4</td>
-                <td>[Placeholder: complete milestone report experiments and analysis]</td>
+                <td>Week 4: April 14 – April 20</td>
+                <td>Prepare and submit the milestone report by April 15; tune scheduling strategy, graph representation, and implementation details based on benchmark results; run larger-scale experiments and begin generating final plots; draft the final report structure and poster outline early so writing is not left until the end.</td>
               </tr>
               <tr>
-                <td>Week 5</td>
-                <td>[Placeholder: add optimizations / stretch goal implementation]</td>
-              </tr>
-              <tr>
-                <td>Week 6</td>
-                <td>[Placeholder: finalize experiments, write report, prepare poster/website]</td>
+                <td>Week 5: April 21 – April 24</td>
+                <td>Complete all remaining experiments and finalize the analysis; finish the final report, poster, website, and presentation materials; verify reproducibility of all results and ensure figures and conclusions are final before the April 24 presentation; practice the presentation and make final edits before submission and presentation.</td>
               </tr>
             </tbody>
           </table>
