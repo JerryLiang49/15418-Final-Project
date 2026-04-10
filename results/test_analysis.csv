@@ -1,0 +1,7 @@
+graph,vertices,edges,threads,algorithm,max_deg,avg_deg,cv_deg,colors,conflicts,conflict_rate,rounds,hubs,init_time,compute_time,total_time,valid
+graphs/er_100k.txt,100000,500000,1,spec,27,10.00,0.315,8,0,0.0000,1,0,0.001259,0.005450,0.006709,yes
+graphs/rmat_100k.txt,100000,500000,1,spec,6016,10.00,5.667,42,0,0.0000,1,3705,0.002518,0.001958,0.004476,yes
+graphs/er_100k.txt,100000,500000,1,jp,27,10.00,0.315,9,0,0.0000,18,0,0.000115,0.018242,0.018357,yes
+graphs/rmat_100k.txt,100000,500000,1,jp,6016,10.00,5.667,59,0,0.0000,161,0,0.000134,0.057113,0.057247,yes
+graphs/er_100k.txt,100000,500000,1,hybrid,27,10.00,0.315,8,0,0.0000,1,0,0.001300,0.005710,0.007010,yes
+graphs/rmat_100k.txt,100000,500000,1,hybrid,6016,10.00,5.667,42,0,0.0000,1,3705,0.002632,0.001868,0.004500,yes
