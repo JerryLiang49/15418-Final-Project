@@ -1,0 +1,22 @@
+# Build artifacts
+build/
+*.o
+*.obj
+*.exe
+
+# Compiled binaries
+graphcolor
+test_runner
+
+# Benchmark results (regenerated per run)
+results/*.csv
+build.log
+
+# Editor / OS scratch
+*.swp
+.DS_Store
+Thumbs.db
+
+# Python scratch
+__pycache__/
+*.pyc
