@@ -352,6 +352,7 @@
         <div class="quick-links">
           <span class="pill"><strong>Project URL:</strong>&nbsp;[Paste website URL here]</span>
           <span class="pill"><strong>Platform:</strong>&nbsp;[CPU / GPU / OpenMP / CUDA / MPI]</span>
+          <a class="pill" href="docs/milestone_report.pdf"><strong>Milestone Report (PDF)</strong></a>
         </div>
       </div>
     </section>
@@ -367,6 +368,7 @@
           <li><a href="#goals">Goals and Deliverables</a></li>
           <li><a href="#platform">Platform Choice</a></li>
           <li><a href="#schedule">Schedule</a></li>
+          <li><a href="docs/milestone_report.pdf">Milestone Report</a></li>
         </ul>
       </aside>
 
@@ -493,6 +495,7 @@
         <section class="card" id="schedule">
           <h2>Schedule</h2>
           <p>We will complete all implementation, experiments, analysis, report writing, and presentation materials before the April 24 presentation.</p>
+          <p><em>Note: schedule for April 14 onward was updated following the milestone report to reflect revised plans and owner assignments.</em></p>
           <table class="schedule-table">
             <thead>
               <tr>
@@ -514,12 +517,24 @@
                 <td>Improve conflict detection and conflict resolution logic; add instrumentation for conflict counts, recoloring rounds, runtime breakdowns, and color count; benchmark across different graph families and thread counts; start analyzing how graph structure affects performance.</td>
               </tr>
               <tr>
-                <td>Week 4: April 14 – April 20</td>
-                <td>Prepare and submit the milestone report by April 15; tune scheduling strategy, graph representation, and implementation details based on benchmark results; run larger-scale experiments and begin generating final plots; draft the final report structure and poster outline early so writing is not left until the end.</td>
+                <td>April 15 – April 16</td>
+                <td>Implement hybrid speculative + Jones-Plassmann algorithm (Jerry). Optimize existing speculative implementation based on bottleneck analysis (Harry).</td>
               </tr>
               <tr>
-                <td>Week 5: April 21 – April 24</td>
-                <td>Complete all remaining experiments and finalize the analysis; finish the final report, poster, website, and presentation materials; verify reproducibility of all results and ensure figures and conclusions are final before the April 24 presentation; practice the presentation and make final edits before submission and presentation.</td>
+                <td>April 17 – 18</td>
+                <td>Run large-scale experiments across all graphs and thread counts, finalize plots (Harry). Begin drafting the final report (Jerry).</td>
+              </tr>
+              <tr>
+                <td>April 19 – April 21</td>
+                <td>Keep working on report (Both). Implement GPU version if time allows (Harry). Optimize GPU version if time allows (Jerry).</td>
+              </tr>
+              <tr>
+                <td>April 22</td>
+                <td>Finalize report (Both). Begin working on poster (Both).</td>
+              </tr>
+              <tr>
+                <td>April 23</td>
+                <td>Finish poster (Both). Finalize website (Harry). Submit report (Jerry).</td>
               </tr>
             </tbody>
           </table>
