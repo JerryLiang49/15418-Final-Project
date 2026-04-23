@@ -97,25 +97,28 @@ for algo in "${ALGORITHMS[@]}"; do
 done
 
 # GPU runs (single run per graph, no thread variation)
-echo "--- Algorithm: gpu ---"
-for graph in "${AVAILABLE_GRAPHS[@]}"; do
-    echo -n "  $graph (gpu) ... "
-    result=$("$BINARY" "$graph" 1 --csv --algorithm gpu 2>&1) || true
-    if echo "$result" | grep -q ",yes$\|,NO$"; then
-        echo "$result" >> "$OUTFILE"
-        valid=$(echo "$result" | awk -F',' '{print $NF}')
-        if [ "$valid" = "yes" ]; then
-            echo "OK"
+GPU_ALGORITHMS=("gpu" "gpu-edge")
+for algo in "${GPU_ALGORITHMS[@]}"; do
+    echo "--- Algorithm: $algo ---"
+    for graph in "${AVAILABLE_GRAPHS[@]}"; do
+        echo -n "  $graph ($algo) ... "
+        result=$("$BINARY" "$graph" 1 --csv --algorithm "$algo" 2>&1) || true
+        if echo "$result" | grep -q ",yes$\|,NO$"; then
+            echo "$result" >> "$OUTFILE"
+            valid=$(echo "$result" | awk -F',' '{print $NF}')
+            if [ "$valid" = "yes" ]; then
+                echo "OK"
+            else
+                echo "INVALID COLORING!"
+                FAIL=1
+            fi
         else
-            echo "INVALID COLORING!"
-            FAIL=1
+            echo "SKIP (no GPU support for $algo)"
+            break
         fi
-    else
-        echo "SKIP (no GPU)"
-        break  # if first graph fails, skip the rest
-    fi
+    done
+    echo ""
 done
-echo ""
 
 echo "Results saved to $OUTFILE"
 

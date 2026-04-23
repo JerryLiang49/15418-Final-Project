@@ -110,19 +110,66 @@ __global__ void detect_conflicts_kernel(
 
 // ---------------------------------------------------------------------------
 // C-linkage entry point called from coloring_gpu_wrapper.cpp
+//
+// Timing methodology (out_*_ms parameters, all optional — pass NULL to skip):
+//   out_transfer_ms  : cudaMalloc + H2D transfers (one-time setup cost)
+//   out_kernel_ms    : the iteration loop only — kernel time + per-round sync.
+//                      This is the "kernel-only" figure that matches Naumov
+//                      (2015) and Deveci (2016), which assume CSR is already
+//                      resident on the device.
+//   out_finalize_ms  : D2H result transfer + cudaFree.
+//
+// Optimizations:
+//   - cudaFree(0) warmup before timing to force CUDA context init out of the
+//     timed region (saves ~30-80ms on first call per process).
+//   - Pinned host memory for per-round conflict counter readback: DMA burst
+//     instead of synchronous pageable copy (~10x faster per round).
 // ---------------------------------------------------------------------------
+extern "C" int gpu_warmup() {
+    cudaError_t err = cudaFree(0);
+    if (err != cudaSuccess) {
+        fprintf(stderr, "CUDA warmup failed: %s\n", cudaGetErrorString(err));
+        return -1;
+    }
+    return 0;
+}
+
 extern "C" int gpu_color(
     const int* h_row_offsets, int n_plus_1,
     const int* h_col_indices, int num_edges,
     int* h_colors,
     const int* h_worklist, int wsize,
     int* out_total_conflicts,
-    int* out_num_rounds)
+    int* out_num_rounds,
+    float* out_transfer_ms,
+    float* out_kernel_ms,
+    float* out_finalize_ms)
 {
     int n = n_plus_1 - 1;
 
+    // ---- CUDA events for phase timing ----
+    cudaEvent_t ev_start, ev_transfer_done, ev_kernel_done, ev_finalize_done;
+    cudaEventCreate(&ev_start);
+    cudaEventCreate(&ev_transfer_done);
+    cudaEventCreate(&ev_kernel_done);
+    cudaEventCreate(&ev_finalize_done);
+
     int *d_row_offsets, *d_col_indices, *d_colors;
     int *d_worklist, *d_next_worklist, *d_next_count;
+
+    // Pinned host memory for the per-round conflict-count readback.
+    // Pinned (page-locked) memory lets cudaMemcpy use DMA, avoiding the
+    // staging copy that pageable memory incurs. For a 4-byte counter read
+    // on every iteration, this is a measurable win on graphs with many
+    // rounds (grid graphs converge in 30-50 rounds).
+    int* h_next_count_pinned = nullptr;
+    cudaError_t pinned_err = cudaMallocHost(&h_next_count_pinned, sizeof(int));
+    if (pinned_err != cudaSuccess || h_next_count_pinned == nullptr) {
+        fprintf(stderr, "cudaMallocHost failed: %s\n", cudaGetErrorString(pinned_err));
+        return -1;
+    }
+
+    cudaEventRecord(ev_start);
 
     cudaMalloc(&d_row_offsets, n_plus_1 * sizeof(int));
     cudaMalloc(&d_col_indices, num_edges * sizeof(int));
@@ -136,6 +183,8 @@ extern "C" int gpu_color(
     cudaMemcpy(d_colors, h_colors, n * sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(d_worklist, h_worklist, wsize * sizeof(int), cudaMemcpyHostToDevice);
 
+    cudaEventRecord(ev_transfer_done);
+
     int total_conflicts = 0;
     int num_rounds = 0;
 
@@ -145,14 +194,17 @@ extern "C" int gpu_color(
         tentative_color_kernel<<<grid, BLOCK_SIZE>>>(
             d_row_offsets, d_col_indices, d_colors, d_worklist, wsize);
 
-        cudaMemset(d_next_count, 0, sizeof(int));
+        cudaMemsetAsync(d_next_count, 0, sizeof(int));
 
         detect_conflicts_kernel<<<grid, BLOCK_SIZE>>>(
             d_row_offsets, d_col_indices, d_colors, d_worklist, wsize,
             d_next_worklist, d_next_count);
 
-        int next_count = 0;
-        cudaMemcpy(&next_count, d_next_count, sizeof(int), cudaMemcpyDeviceToHost);
+        // Readback into pinned host memory. Still synchronous (we need the
+        // count to decide loop termination), but pinned memory makes the
+        // copy a DMA burst instead of a staged pageable copy.
+        cudaMemcpy(h_next_count_pinned, d_next_count, sizeof(int), cudaMemcpyDeviceToHost);
+        int next_count = *h_next_count_pinned;
 
         num_rounds++;
         total_conflicts += next_count;
@@ -163,6 +215,8 @@ extern "C" int gpu_color(
         wsize = next_count;
     }
 
+    cudaEventRecord(ev_kernel_done);
+
     cudaMemcpy(h_colors, d_colors, n * sizeof(int), cudaMemcpyDeviceToHost);
 
     cudaFree(d_row_offsets);
@@ -171,6 +225,19 @@ extern "C" int gpu_color(
     cudaFree(d_worklist);
     cudaFree(d_next_worklist);
     cudaFree(d_next_count);
+    cudaFreeHost(h_next_count_pinned);
+
+    cudaEventRecord(ev_finalize_done);
+    cudaEventSynchronize(ev_finalize_done);
+
+    if (out_transfer_ms) cudaEventElapsedTime(out_transfer_ms, ev_start, ev_transfer_done);
+    if (out_kernel_ms)   cudaEventElapsedTime(out_kernel_ms, ev_transfer_done, ev_kernel_done);
+    if (out_finalize_ms) cudaEventElapsedTime(out_finalize_ms, ev_kernel_done, ev_finalize_done);
+
+    cudaEventDestroy(ev_start);
+    cudaEventDestroy(ev_transfer_done);
+    cudaEventDestroy(ev_kernel_done);
+    cudaEventDestroy(ev_finalize_done);
 
     *out_total_conflicts = total_conflicts;
     *out_num_rounds = num_rounds;

@@ -4,7 +4,8 @@
 // Loads a graph, runs the selected parallel coloring algorithm, and outputs
 // results in either human-readable or CSV format (for benchmarking).
 //
-// Usage: ./graphcolor <graph_file> [num_threads] [--csv] [--algorithm spec|hybrid]
+// Usage: ./graphcolor <graph_file> [num_threads] [--csv]
+//                    [--algorithm spec|hybrid|gpu|gpu-edge]
 // ===========================================================================
 
 #include "coloring.h"
@@ -22,11 +23,11 @@
 #endif
 
 static void usage(const char* prog) {
-    std::cerr << "Usage: " << prog << " <graph_file> [num_threads] [--csv] [--algorithm spec|hybrid|gpu]\n"
+    std::cerr << "Usage: " << prog << " <graph_file> [num_threads] [--csv] [--algorithm spec|hybrid|gpu|gpu-edge]\n"
               << "  graph_file   : path to graph file (edge-list or METIS)\n"
               << "  num_threads  : threads for parallel coloring (default: all available)\n"
               << "  --csv        : output results as CSV row (for benchmarking)\n"
-              << "  --algorithm  : spec (default), hybrid (spec + JP), or gpu (CUDA)\n";
+              << "  --algorithm  : spec (default), hybrid (spec + JP), gpu, or gpu-edge (CUDA)\n";
 }
 
 int main(int argc, char* argv[]) {
@@ -83,10 +84,15 @@ int main(int argc, char* argv[]) {
     // Run selected algorithm
     ColoringResult par;
     std::string algo_name;
-    if (algorithm == "gpu") {
+    if (algorithm == "gpu" || algorithm == "gpu-edge") {
 #ifdef CUDA_ENABLED
-        par = color_gpu(g);
-        algo_name = "GPU";
+        if (algorithm == "gpu-edge") {
+            par = color_gpu_edge(g);
+            algo_name = "GPU Edge";
+        } else {
+            par = color_gpu(g);
+            algo_name = "GPU";
+        }
         num_threads = 0;  // GPU: no CPU thread count
 #else
         std::cerr << "Error: GPU support not compiled. Rebuild with CUDA (nvcc required).\n";
@@ -101,8 +107,15 @@ int main(int argc, char* argv[]) {
     }
     bool par_valid = verify_coloring(g, par.colors);
 
-    // Derived metrics for analysis
-    double conflict_rate = (g.num_vertices > 0) ? (double)par.num_conflicts / g.num_vertices * 100.0 : 0.0;
+    // Derived metrics for analysis.
+    // Note: GPU counts conflict *events* summed across rounds (a vertex may
+    // appear as a conflict in multiple rounds), so we normalize by rounds to
+    // report an average per-round rate comparable to the CPU algorithms.
+    double conflict_divisor = (double)g.num_vertices;
+    if ((algorithm == "gpu" || algorithm == "gpu-edge") && par.num_rounds > 0) {
+        conflict_divisor *= (double)par.num_rounds;
+    }
+    double conflict_rate = (conflict_divisor > 0) ? (double)par.num_conflicts / conflict_divisor * 100.0 : 0.0;
 
     if (csv_mode) {
         // CSV header (printed by benchmark script):
@@ -134,7 +147,7 @@ int main(int argc, char* argv[]) {
                   << "  Avg degree: " << std::fixed << std::setprecision(1) << avg_deg
                   << "  CV: " << std::setprecision(3) << cv_deg << "\n"
                   << "Load time   : " << load_time << " s\n\n"
-                  << "--- " << algo_name << " Coloring (" << (algorithm == "gpu" ? "GPU" : std::to_string(num_threads) + " threads") << ") ---\n"
+                  << "--- " << algo_name << " Coloring (" << ((algorithm == "gpu" || algorithm == "gpu-edge") ? "GPU" : std::to_string(num_threads) + " threads") << ") ---\n"
                   << "Colors used : " << par.num_colors << "\n"
                   << "Conflicts   : " << par.num_conflicts
                   << " (" << std::setprecision(2) << conflict_rate << "% of vertices)\n"

@@ -75,6 +75,16 @@ ColoringResult color_hybrid(const Graph& g, int num_threads);
 // ---------------------------------------------------------------------------
 #ifdef CUDA_ENABLED
 ColoringResult color_gpu(const Graph& g);
+
+// ---------------------------------------------------------------------------
+// Edge-parallel GPU speculative coloring (CUDA).
+//
+// Uses the same CPU-side hub preprocessing as color_gpu(), but changes the
+// device phase to edge-parallel forbidden-color accumulation and conflict
+// detection. This keeps the implementation style close to the baseline while
+// exposing more GPU parallelism on irregular graphs.
+// ---------------------------------------------------------------------------
+ColoringResult color_gpu_edge(const Graph& g);
 #endif
 
 // ---------------------------------------------------------------------------

@@ -72,7 +72,18 @@ def main():
     graphs = sorted(set(graph_name(r["graph"]) for r in rows),
                     key=lambda g: next(r["vertices"] for r in rows if graph_name(r["graph"]) == g))
     algos = sorted(set(r["algorithm"] for r in rows))
-    threads = sorted(set(r["threads"] for r in rows))
+    # CPU thread sweep (excludes GPU, which uses threads=0 as a sentinel)
+    threads = sorted(set(r["threads"] for r in rows if r["threads"] > 0))
+
+    def is_gpu(algo):
+        return algo.startswith("gpu")
+
+    def gpu_row(g, algo):
+        """Return the single GPU row for graph g (threads=0), or None."""
+        key = (g, algo)
+        if key not in data:
+            return None
+        return data[key].get(0)
 
     # ===== 1. GRAPH CHARACTERISTICS =====
     print("=" * 80)
@@ -93,10 +104,24 @@ def main():
     print()
 
     # ===== 2. COMPUTE-TIME SPEEDUP (1T baseline per algo) =====
+    # GPU: compared against spec-1T baseline (a single GPU run per graph).
     print("=" * 80)
     print("2. COMPUTE-TIME SPEEDUP (1T parallel = 1.00x baseline)")
     print("=" * 80)
     for algo in algos:
+        if is_gpu(algo):
+            print(f"\n--- Algorithm: {algo} (vs spec-1T compute-time baseline) ---")
+            print(f"{'Graph':<20s} {'GPU speedup':>14s}")
+            print("-" * 36)
+            for g in graphs:
+                gr = gpu_row(g, algo)
+                spec1 = data.get((g, "spec"), {}).get(1)
+                if gr and spec1 and gr["compute_time"] > 0:
+                    su = spec1["compute_time"] / gr["compute_time"]
+                    print(f"{g:<20s} {su:>13.2f}x")
+                else:
+                    print(f"{g:<20s} {'N/A':>14s}")
+            continue
         print(f"\n--- Algorithm: {algo} ---")
         header = f"{'Graph':<20s}"
         for t in threads:
@@ -122,10 +147,24 @@ def main():
     print()
 
     # ===== 3. TOTAL-TIME SPEEDUP =====
+    # GPU: compared against spec-1T total-time baseline.
     print("=" * 80)
     print("3. TOTAL-TIME SPEEDUP (1T parallel = 1.00x baseline)")
     print("=" * 80)
     for algo in algos:
+        if is_gpu(algo):
+            print(f"\n--- Algorithm: {algo} (vs spec-1T total-time baseline) ---")
+            print(f"{'Graph':<20s} {'GPU speedup':>14s}")
+            print("-" * 36)
+            for g in graphs:
+                gr = gpu_row(g, algo)
+                spec1 = data.get((g, "spec"), {}).get(1)
+                if gr and spec1 and gr["total_time"] > 0:
+                    su = spec1["total_time"] / gr["total_time"]
+                    print(f"{g:<20s} {su:>13.2f}x")
+                else:
+                    print(f"{g:<20s} {'N/A':>14s}")
+            continue
         print(f"\n--- Algorithm: {algo} ---")
         header = f"{'Graph':<20s}"
         for t in threads:
@@ -151,10 +190,14 @@ def main():
     print()
 
     # ===== 4. PARALLEL EFFICIENCY =====
+    # Skipped for GPU: efficiency requires a thread-count sweep; GPU is a
+    # single-configuration run.
     print("=" * 80)
     print("4. PARALLEL EFFICIENCY (speedup / threads, ideal = 1.00)")
     print("=" * 80)
     for algo in algos:
+        if is_gpu(algo):
+            continue
         print(f"\n--- Algorithm: {algo} (compute-time) ---")
         header = f"{'Graph':<20s}"
         for t in threads:
@@ -181,20 +224,27 @@ def main():
     print()
 
     # ===== 5. COLOR QUALITY COMPARISON =====
+    # GPU has a single column (no thread sweep).
     print("=" * 80)
     print("5. COLOR QUALITY (colors used at 1T and max threads)")
     print("=" * 80)
-    max_t = max(threads)
+    max_t = max(threads) if threads else 0
     header = f"{'Graph':<20s}"
     for algo in algos:
-        header += f" {algo + '_1T':>10s} {algo + '_' + str(max_t) + 'T':>10s}"
+        if is_gpu(algo):
+            header += f" {algo:>10s}"
+        else:
+            header += f" {algo + '_1T':>10s} {algo + '_' + str(max_t) + 'T':>10s}"
     print(header)
-    print("-" * (20 + 21 * len(algos)))
+    print("-" * len(header))
     for g in graphs:
         line = f"{g:<20s}"
         for algo in algos:
             key = (g, algo)
-            if key in data:
+            if is_gpu(algo):
+                gr = gpu_row(g, algo)
+                line += f" {(gr['colors'] if gr else 'N/A'):>10}"
+            elif key in data:
                 d = data[key]
                 c1 = d.get(1, {}).get("colors", "N/A")
                 cn = d.get(max_t, {}).get("colors", "N/A")
@@ -205,12 +255,24 @@ def main():
     print()
 
     # ===== 6. CONFLICT RATE ANALYSIS =====
+    # GPU: single-run column (normalized by rounds in main.cpp).
     print("=" * 80)
-    print("6. CONFLICT RATE (% of vertices with conflicts)")
+    print("6. CONFLICT RATE (% of vertices with conflicts, per round for GPU)")
     print("=" * 80)
     for algo in algos:
         if algo == "jp":
             continue  # JP has no conflicts
+        if is_gpu(algo):
+            print(f"\n--- Algorithm: {algo} ---")
+            print(f"{'Graph':<20s} {'conflict_rate':>14s}")
+            print("-" * 36)
+            for g in graphs:
+                gr = gpu_row(g, algo)
+                if gr:
+                    print(f"{g:<20s} {gr['conflict_rate']:>13.3f}%")
+                else:
+                    print(f"{g:<20s} {'N/A':>14s}")
+            continue
         print(f"\n--- Algorithm: {algo} ---")
         header = f"{'Graph':<20s}"
         for t in threads:
@@ -237,6 +299,17 @@ def main():
     print("7. ROUNDS TO CONVERGENCE")
     print("=" * 80)
     for algo in algos:
+        if is_gpu(algo):
+            print(f"\n--- Algorithm: {algo} ---")
+            print(f"{'Graph':<20s} {'rounds':>8s}")
+            print("-" * 30)
+            for g in graphs:
+                gr = gpu_row(g, algo)
+                if gr:
+                    print(f"{g:<20s} {gr['rounds']:>8d}")
+                else:
+                    print(f"{g:<20s} {'N/A':>8s}")
+            continue
         print(f"\n--- Algorithm: {algo} ---")
         header = f"{'Graph':<20s}"
         for t in threads:
@@ -268,6 +341,18 @@ def main():
         header = f"{'Graph':<20s} {'T':>3s} {'init_ms':>10s} {'comp_ms':>10s} {'total_ms':>10s} {'init%':>7s} {'comp%':>7s}"
         print(header)
         print("-" * 67)
+        if is_gpu(algo):
+            for g in graphs:
+                gr = gpu_row(g, algo)
+                if not gr:
+                    continue
+                init_ms = gr["init_time"] * 1000
+                comp_ms = gr["compute_time"] * 1000
+                total_ms = gr["total_time"] * 1000
+                init_pct = gr["init_time"] / gr["total_time"] * 100 if gr["total_time"] > 0 else 0
+                comp_pct = gr["compute_time"] / gr["total_time"] * 100 if gr["total_time"] > 0 else 0
+                print(f"{g:<20s} {'—':>3s} {init_ms:>10.3f} {comp_ms:>10.3f} {total_ms:>10.3f} {init_pct:>6.1f}% {comp_pct:>6.1f}%")
+            continue
         for g in graphs:
             key = (g, algo)
             if key not in data:
@@ -306,8 +391,9 @@ def main():
     print()
 
     # ===== 10. ALGORITHM HEAD-TO-HEAD =====
+    # CPU algos use max_t threads; GPU uses its single threads=0 row.
     print("=" * 80)
-    print("10. ALGORITHM HEAD-TO-HEAD (total time at max threads)")
+    print("10. ALGORITHM HEAD-TO-HEAD (total time, CPU @ max threads, GPU single-run)")
     print("=" * 80)
     header = f"{'Graph':<20s}"
     for algo in algos:
@@ -320,6 +406,15 @@ def main():
         line = f"{g:<20s}"
         times = {}
         for algo in algos:
+            if is_gpu(algo):
+                gr = gpu_row(g, algo)
+                if gr:
+                    t_ms = gr["total_time"] * 1000
+                    times[algo] = t_ms
+                    line += f" {t_ms:>10.3f}"
+                else:
+                    line += f" {'N/A':>10s}"
+                continue
             key = (g, algo)
             if key in data and max_t in data[key]:
                 t_ms = data[key][max_t]["total_time"] * 1000
