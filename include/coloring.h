@@ -64,6 +64,20 @@ ColoringResult color_parallel(const Graph& g, int num_threads);
 ColoringResult color_hybrid(const Graph& g, int num_threads);
 
 // ---------------------------------------------------------------------------
+// GPU speculative coloring (CUDA).
+//
+// Same Gebremedhin-Manne algorithm mapped to GPU kernels:
+//   Phase 1 (CPU):  Sequential hub coloring (same as CPU version).
+//   Phase 2 (GPU):  Iterative tentative-color + conflict-detect kernels
+//                    using 128-bit register bitmask (4 x uint32_t).
+//
+// Only available when compiled with CUDA (nvcc detected by Makefile).
+// ---------------------------------------------------------------------------
+#ifdef CUDA_ENABLED
+ColoringResult color_gpu(const Graph& g);
+#endif
+
+// ---------------------------------------------------------------------------
 // Verify that a coloring is valid: no adjacent vertices share a color,
 // and every vertex has been assigned a color (>= 0).
 // ---------------------------------------------------------------------------

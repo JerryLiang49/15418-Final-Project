@@ -22,11 +22,11 @@
 #endif
 
 static void usage(const char* prog) {
-    std::cerr << "Usage: " << prog << " <graph_file> [num_threads] [--csv] [--algorithm spec|hybrid]\n"
+    std::cerr << "Usage: " << prog << " <graph_file> [num_threads] [--csv] [--algorithm spec|hybrid|gpu]\n"
               << "  graph_file   : path to graph file (edge-list or METIS)\n"
               << "  num_threads  : threads for parallel coloring (default: all available)\n"
               << "  --csv        : output results as CSV row (for benchmarking)\n"
-              << "  --algorithm  : spec (speculative, default) or hybrid (spec + JP refinement)\n";
+              << "  --algorithm  : spec (default), hybrid (spec + JP), or gpu (CUDA)\n";
 }
 
 int main(int argc, char* argv[]) {
@@ -83,7 +83,16 @@ int main(int argc, char* argv[]) {
     // Run selected algorithm
     ColoringResult par;
     std::string algo_name;
-    if (algorithm == "hybrid") {
+    if (algorithm == "gpu") {
+#ifdef CUDA_ENABLED
+        par = color_gpu(g);
+        algo_name = "GPU";
+        num_threads = 0;  // GPU: no CPU thread count
+#else
+        std::cerr << "Error: GPU support not compiled. Rebuild with CUDA (nvcc required).\n";
+        return 1;
+#endif
+    } else if (algorithm == "hybrid") {
         par = color_hybrid(g, num_threads);
         algo_name = "Hybrid";
     } else {
@@ -125,7 +134,7 @@ int main(int argc, char* argv[]) {
                   << "  Avg degree: " << std::fixed << std::setprecision(1) << avg_deg
                   << "  CV: " << std::setprecision(3) << cv_deg << "\n"
                   << "Load time   : " << load_time << " s\n\n"
-                  << "--- " << algo_name << " Coloring (" << num_threads << " threads) ---\n"
+                  << "--- " << algo_name << " Coloring (" << (algorithm == "gpu" ? "GPU" : std::to_string(num_threads) + " threads") << ") ---\n"
                   << "Colors used : " << par.num_colors << "\n"
                   << "Conflicts   : " << par.num_conflicts
                   << " (" << std::setprecision(2) << conflict_rate << "% of vertices)\n"

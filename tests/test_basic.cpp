@@ -98,6 +98,28 @@ static void test_hybrid_path() {
     std::cout << "PASSED\n";
 }
 
+// --- GPU coloring tests ---
+
+#ifdef CUDA_ENABLED
+static void test_gpu_triangle() {
+    std::cout << "test_gpu_triangle ... ";
+    Graph g = make_triangle();
+    ColoringResult r = color_gpu(g);
+    assert(verify_coloring(g, r.colors));
+    assert(r.num_colors == 3);
+    std::cout << "PASSED\n";
+}
+
+static void test_gpu_path() {
+    std::cout << "test_gpu_path ... ";
+    Graph g = make_path(1000);
+    ColoringResult r = color_gpu(g);
+    assert(verify_coloring(g, r.colors));
+    assert(r.num_colors <= 3);
+    std::cout << "PASSED\n";
+}
+#endif
+
 // --- Verification tests ---
 
 static void test_verify_detects_bad_coloring() {
@@ -153,6 +175,10 @@ int main() {
     test_parallel_path();
     test_hybrid_triangle();
     test_hybrid_path();
+#ifdef CUDA_ENABLED
+    test_gpu_triangle();
+    test_gpu_path();
+#endif
     test_verify_detects_bad_coloring();
     test_load_edge_list();
     test_load_metis();
