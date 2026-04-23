@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Convert SNAP edge-list files to our edge-list format.
+"""
+Convert SNAP edge-list files to our edge-list format.
 
 SNAP files have comment lines starting with '#', then tab-separated "u\tv" edges.
 Our format: first line "num_vertices num_edges", then one "u v" per line (0-indexed).
@@ -50,8 +51,7 @@ def main():
         for u, v in sorted(remapped):
             f.write(f"{u} {v}\n")
 
-    print(f"Converted: {n} vertices, {len(remapped)} edges -> {args.output}")
-
+    print(f"Converted: {n} vertices, {len(remapped)} edges to {args.output}")
 
 if __name__ == "__main__":
     main()

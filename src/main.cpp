@@ -1,12 +1,8 @@
-// ===========================================================================
-// main.cpp — Graph coloring driver
-//
+// Entry point 
 // Loads a graph, runs the selected parallel coloring algorithm, and outputs
-// results in either human-readable or CSV format (for benchmarking).
-//
+// results in either human-readable or CSV format
 // Usage: ./graphcolor <graph_file> [num_threads] [--csv]
-//                    [--algorithm spec|hybrid|gpu|gpu-edge]
-// ===========================================================================
+//                    [--algorithm sequential|spec|hybrid|gpu|gpu-edge]
 
 #include "coloring.h"
 #include "graph.h"
@@ -22,12 +18,14 @@
 #include <omp.h>
 #endif
 
+// Output correct calling convention 
 static void usage(const char* prog) {
-    std::cerr << "Usage: " << prog << " <graph_file> [num_threads] [--csv] [--algorithm spec|hybrid|gpu|gpu-edge]\n"
+    std::cerr << "Usage: " << prog << " <graph_file> [num_threads] [--csv] [--algorithm sequential|spec|hybrid|gpu|gpu-edge]\n"
               << "  graph_file   : path to graph file (edge-list or METIS)\n"
               << "  num_threads  : threads for parallel coloring (default: all available)\n"
               << "  --csv        : output results as CSV row (for benchmarking)\n"
-              << "  --algorithm  : spec (default), hybrid (spec + JP), gpu, or gpu-edge (CUDA)\n";
+              << "  --algorithm  : sequential (greedy baseline), spec (default, Gebremedhin-Manne),\n"
+              << "                 hybrid (spec + JP refinement), gpu, or gpu-edge (CUDA)\n";
 }
 
 int main(int argc, char* argv[]) {
@@ -41,6 +39,7 @@ int main(int argc, char* argv[]) {
     bool csv_mode = false;
     std::string algorithm = "spec";
 
+    // parse the rest of the arguments 
     for (int i = 2; i < argc; i++) {
         if (std::strcmp(argv[i], "--csv") == 0) {
             csv_mode = true;
@@ -51,13 +50,13 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Load graph from file (auto-detects edge-list vs METIS format)
+    // Load graph from file
     Timer load_timer;
     load_timer.start();
     Graph g = load_graph(graph_file);
     double load_time = load_timer.elapsed();
 
-    // Compute graph statistics for CSV output and analysis
+    // Compute graph statistics for analysis
     int max_deg = 0;
     double sum_deg = 0.0, sum_deg2 = 0.0;
     for (int v = 0; v < g.num_vertices; v++) {
@@ -70,7 +69,8 @@ int main(int argc, char* argv[]) {
     double var_deg = (g.num_vertices > 0) ? sum_deg2 / g.num_vertices - avg_deg * avg_deg : 0.0;
     double cv_deg = (avg_deg > 0) ? std::sqrt(var_deg) / avg_deg : 0.0;
 
-    // Determine thread count (default: all available cores)
+    // Determine thread count 
+    // default is all available cores
     if (num_threads <= 0) {
 #ifdef _OPENMP
         #pragma omp parallel
@@ -101,6 +101,10 @@ int main(int argc, char* argv[]) {
     } else if (algorithm == "hybrid") {
         par = color_hybrid(g, num_threads);
         algo_name = "Hybrid";
+    } else if (algorithm == "sequential" || algorithm == "seq") {
+        par = color_sequential(g);
+        algo_name = "Sequential";
+        num_threads = 1; // Sequential is single-threaded by definition
     } else {
         par = color_parallel(g, num_threads);
         algo_name = "Speculative";

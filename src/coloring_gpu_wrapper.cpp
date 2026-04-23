@@ -1,15 +1,9 @@
-// ===========================================================================
-// coloring_gpu_wrapper.cpp — C++ wrapper for CUDA graph coloring
-//
-// This file is compiled with g++ (not nvcc) so it can freely use C++17
-// and all STL headers. It handles:
-//   - Hub preprocessing (same as CPU version)
-//   - Building the initial worklist
-//   - Calling the CUDA entry point (extern "C" gpu_color)
-//   - Packaging results into ColoringResult
-//
-// The actual CUDA kernels live in coloring_cuda.cu (compiled by nvcc).
-// ===========================================================================
+// C++ host code for CUDA graph coloring
+// Handles 
+// - Hub preprocessing (same as CPU version)
+// - Building the initial worklist
+// - Calling the CUDA entry point
+// - Packaging results into ColoringResult
 
 #ifdef CUDA_ENABLED
 
@@ -19,14 +13,13 @@
 #include <vector>
 #include <cmath>
 
-// Extern "C" functions implemented in coloring_cuda.cu.
+// Implemented in coloring_cuda.cu.
 extern "C" int gpu_warmup();
 
-// The out_*_ms fields are CUDA-event-measured phase timings:
-//   out_transfer_ms  : cudaMalloc + H2D transfers (one-time setup cost)
-//   out_kernel_ms    : iteration loop only (the "kernel-only" figure that
-//                      literature reports — assumes CSR is resident on device)
-//   out_finalize_ms  : D2H colors + cudaFree
+
+// out_transfer_ms: cudaMalloc + H2D transfers (one-time setup cost)
+// out_kernel_ms: iteration loop only 
+// out_finalize_ms: Device to host + cudaFree
 extern "C" int gpu_color(
     const int* h_row_offsets, int n_plus_1,
     const int* h_col_indices, int num_edges,
@@ -42,8 +35,8 @@ ColoringResult color_gpu(const Graph& g) {
     int n = g.num_vertices;
     std::vector<int> colors(n, -1);
 
-    // Warm up CUDA before starting the wall-clock timer so total_time reflects
-    // a warm end-to-end run rather than first-use context initialization.
+    // Warm up before starting the wall-clock timer so total_time reflects
+    // a warm end-to-end run rather than first-use context initialization
     if (gpu_warmup() != 0) {
         ColoringResult result;
         result.colors = std::move(colors);
@@ -60,7 +53,7 @@ ColoringResult color_gpu(const Graph& g) {
     Timer timer;
     timer.start();
 
-    // --- CPU-side hub preprocessing (same as color_parallel) ---
+    // CPU-side hub preprocessing (same as color_parallel)
     std::vector<int> deg(n);
     int max_deg = 0;
     double sum_deg = 0.0;
@@ -70,6 +63,7 @@ ColoringResult color_gpu(const Graph& g) {
     std::vector<int> regular_vertices;
     int num_hubs = 0;
 
+    // only preprocess if enough vertices 
     if (n > 1000) {
         std::vector<int> hub_vertices;
         hub_vertices.reserve(n / 100 + 1);
@@ -77,7 +71,9 @@ ColoringResult color_gpu(const Graph& g) {
         for (int v = 0; v < n; v++) {
             int d = g.degree(v);
             deg[v] = d;
-            if (d > max_deg) max_deg = d;
+            if (d > max_deg) {
+                max_deg = d;
+            } 
             sum_deg += d;
         }
         avg_deg = (n > 0) ? sum_deg / n : 0.0;
@@ -123,11 +119,7 @@ ColoringResult color_gpu(const Graph& g) {
     }
 
     // Sort regular vertices by degree (descending) to reduce warp divergence.
-    // Adjacent threads in a warp will process vertices with similar
-    // neighbor-list lengths, so the warp's execution time is bounded by a
-    // consistent max-degree rather than the single worst vertex in the warp.
-    // Measured ~1.5-2x speedup on power-law graphs (rmat_*) where degree
-    // variance within a random warp would otherwise be large.
+    // This way all threads in warp will have similar work 
     std::sort(regular_vertices.begin(), regular_vertices.end(),
               [&deg](int a, int b) { return deg[a] > deg[b]; });
 
@@ -135,13 +127,13 @@ ColoringResult color_gpu(const Graph& g) {
 
     double cpu_prep_time = timer.elapsed();
 
-    // --- Call CUDA kernels via C-linkage entry point ---
     int total_conflicts = 0;
     int num_rounds = 0;
     float gpu_transfer_ms = 0.0f;
     float gpu_kernel_ms = 0.0f;
     float gpu_finalize_ms = 0.0f;
 
+    // Call CUDA kernel 
     int ret = gpu_color(
         g.row_offsets.data(), n + 1,
         g.col_indices.data(), g.num_edges,
@@ -165,14 +157,7 @@ ColoringResult color_gpu(const Graph& g) {
 
     int num_colors = *std::max_element(colors.begin(), colors.end()) + 1;
 
-    // Timing breakdown:
-    //   init_seconds    = all non-kernel overhead:
-    //                     CPU-side preprocessing + GPU allocation/H2D +
-    //                     D2H/finalization
-    //   compute_seconds = GPU kernel-only time (the "kernel" figure Naumov
-    //                     2015 and Deveci 2016 report — assumes CSR would
-    //                     already be on device in a production pipeline)
-    //   elapsed_seconds = warm end-to-end wall clock
+    // Update Metrics 
     ColoringResult result;
     result.colors = std::move(colors);
     result.num_colors = num_colors;

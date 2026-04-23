@@ -1,20 +1,13 @@
-// ===========================================================================
-// coloring_cuda.cu — GPU graph coloring kernels
-//
-// Compiled by nvcc with -ccbin g++-11 (CUDA 11.7 requires GCC <= 11).
-// Contains two CUDA kernels and a C-linkage entry point called from
-// the C++ wrapper (coloring_gpu_wrapper.cpp).
-// ===========================================================================
+// GPU graph coloring kernels
 
 #include <cuda_runtime.h>
 #include <cstdio>
 
 #define BLOCK_SIZE 256
 
-// ---------------------------------------------------------------------------
-// Kernel 1: Tentative greedy coloring
+
+// Tentative greedy coloring for one speculative round 
 // One thread per vertex, 128-bit register bitmask for used colors.
-// ---------------------------------------------------------------------------
 __global__ void tentative_color_kernel(
     const int* __restrict__ row_offsets,
     const int* __restrict__ col_indices,
@@ -26,37 +19,51 @@ __global__ void tentative_color_kernel(
     if (tid >= wsize) return;
 
     int v = worklist[tid];
+    // neighbors for this thread 
     int start = row_offsets[v];
     int end = row_offsets[v + 1];
 
+    // 128 bit mask for used colors, fits in 4 registers 
+    // If more than 128 colors needed, we go to fallback path
     unsigned int used0 = 0, used1 = 0, used2 = 0, used3 = 0;
 
+    // scan neighbors and mark their colors 
     for (int i = start; i < end; i++) {
         int c = colors[col_indices[i]];
         if (c >= 0 && c < 128) {
             unsigned int bit = 1u << (c & 31);
             int word = c >> 5;
-            if      (word == 0) used0 |= bit;
+            if (word == 0) used0 |= bit;
             else if (word == 1) used1 |= bit;
             else if (word == 2) used2 |= bit;
-            else                used3 |= bit;
+            else used3 |= bit;
         }
     }
 
+    // find first unused color 
     int c = -1;
     int pos;
     pos = __ffs(~used0);
-    if (pos) { c = pos - 1; }
+    if (pos) { 
+        c = pos - 1; // found in first 0-31 block
+    }
     else {
         pos = __ffs(~used1);
-        if (pos) { c = 32 + pos - 1; }
+        if (pos) { 
+            c = 32 + pos - 1; // found in second block
+        }
         else {
             pos = __ffs(~used2);
-            if (pos) { c = 64 + pos - 1; }
+            if (pos) { 
+                c = 64 + pos - 1; // found in third block
+            }
             else {
                 pos = __ffs(~used3);
-                if (pos) { c = 96 + pos - 1; }
+                if (pos) { 
+                    c = 96 + pos - 1; 
+                }
             }
+
         }
     }
 
@@ -77,9 +84,7 @@ __global__ void tentative_color_kernel(
     colors[v] = c;
 }
 
-// ---------------------------------------------------------------------------
-// Kernel 2: Conflict detection + parallel worklist compaction
-// ---------------------------------------------------------------------------
+// Conflict detection + parallel worklist compaction kernel 
 __global__ void detect_conflicts_kernel(
     const int* __restrict__ row_offsets,
     const int* __restrict__ col_indices,
@@ -107,24 +112,7 @@ __global__ void detect_conflicts_kernel(
         }
     }
 }
-
-// ---------------------------------------------------------------------------
-// C-linkage entry point called from coloring_gpu_wrapper.cpp
-//
-// Timing methodology (out_*_ms parameters, all optional — pass NULL to skip):
-//   out_transfer_ms  : cudaMalloc + H2D transfers (one-time setup cost)
-//   out_kernel_ms    : the iteration loop only — kernel time + per-round sync.
-//                      This is the "kernel-only" figure that matches Naumov
-//                      (2015) and Deveci (2016), which assume CSR is already
-//                      resident on the device.
-//   out_finalize_ms  : D2H result transfer + cudaFree.
-//
-// Optimizations:
-//   - cudaFree(0) warmup before timing to force CUDA context init out of the
-//     timed region (saves ~30-80ms on first call per process).
-//   - Pinned host memory for per-round conflict counter readback: DMA burst
-//     instead of synchronous pageable copy (~10x faster per round).
-// ---------------------------------------------------------------------------
+// Force CUDA context initialization before timing so first-use startup overhead is excluded.
 extern "C" int gpu_warmup() {
     cudaError_t err = cudaFree(0);
     if (err != cudaSuccess) {
@@ -147,7 +135,7 @@ extern "C" int gpu_color(
 {
     int n = n_plus_1 - 1;
 
-    // ---- CUDA events for phase timing ----
+    // Measure transfer, kernel-loop, and finalize phases separately.
     cudaEvent_t ev_start, ev_transfer_done, ev_kernel_done, ev_finalize_done;
     cudaEventCreate(&ev_start);
     cudaEventCreate(&ev_transfer_done);
@@ -157,11 +145,7 @@ extern "C" int gpu_color(
     int *d_row_offsets, *d_col_indices, *d_colors;
     int *d_worklist, *d_next_worklist, *d_next_count;
 
-    // Pinned host memory for the per-round conflict-count readback.
-    // Pinned (page-locked) memory lets cudaMemcpy use DMA, avoiding the
-    // staging copy that pageable memory incurs. For a 4-byte counter read
-    // on every iteration, this is a measurable win on graphs with many
-    // rounds (grid graphs converge in 30-50 rounds).
+    // Keep the per-round next_count readback in pinned memory.
     int* h_next_count_pinned = nullptr;
     cudaError_t pinned_err = cudaMallocHost(&h_next_count_pinned, sizeof(int));
     if (pinned_err != cudaSuccess || h_next_count_pinned == nullptr) {
@@ -191,24 +175,25 @@ extern "C" int gpu_color(
     while (wsize > 0) {
         int grid = (wsize + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
+        // Tentatively color every active vertex in the current worklist.
         tentative_color_kernel<<<grid, BLOCK_SIZE>>>(
             d_row_offsets, d_col_indices, d_colors, d_worklist, wsize);
 
         cudaMemsetAsync(d_next_count, 0, sizeof(int));
 
+        // Conflicting losers are compacted into d_next_worklist.
         detect_conflicts_kernel<<<grid, BLOCK_SIZE>>>(
             d_row_offsets, d_col_indices, d_colors, d_worklist, wsize,
             d_next_worklist, d_next_count);
 
-        // Readback into pinned host memory. Still synchronous (we need the
-        // count to decide loop termination), but pinned memory makes the
-        // copy a DMA burst instead of a staged pageable copy.
+        // Read back the size of the next round's worklist.
         cudaMemcpy(h_next_count_pinned, d_next_count, sizeof(int), cudaMemcpyDeviceToHost);
         int next_count = *h_next_count_pinned;
 
         num_rounds++;
         total_conflicts += next_count;
 
+        // Reuse the two device buffers by swapping their roles each round.
         int* tmp = d_worklist;
         d_worklist = d_next_worklist;
         d_next_worklist = tmp;

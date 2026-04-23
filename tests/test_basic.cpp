@@ -1,17 +1,13 @@
-// ===========================================================================
-// test_basic.cpp — Unit tests for graph coloring algorithms
-//
-// Tests correctness of sequential, speculative, and hybrid coloring on
-// small hand-built graphs (triangle, path) and loaded graph files.
+// Basic Correctness unit tests for graph coloring algorithms
+// Tests correctness on small hand-built graphs (triangle, path) and loaded graph files.
 // Also tests the verification function and graph loading routines.
-// ===========================================================================
 
 #include "coloring.h"
 #include "graph.h"
 #include <cassert>
 #include <iostream>
 
-// Build a small test graph (triangle: 0-1-2-0, complete K3)
+// Build a small test graph (triangle)
 static Graph make_triangle() {
     Graph g;
     g.num_vertices = 3;
@@ -21,7 +17,7 @@ static Graph make_triangle() {
     return g;
 }
 
-// Build a path graph: 0 - 1 - 2 - ... - (n-1)
+// Build a path graph: 0 - 1 - 2 - ... - n-1
 static Graph make_path(int n) {
     Graph g;
     g.num_vertices = n;
@@ -38,14 +34,14 @@ static Graph make_path(int n) {
     return g;
 }
 
-// --- Sequential coloring tests ---
+// Sequential coloring tests
 
 static void test_sequential_triangle() {
     std::cout << "test_sequential_triangle ... ";
     Graph g = make_triangle();
     ColoringResult r = color_sequential(g);
     assert(verify_coloring(g, r.colors));
-    assert(r.num_colors == 3);  // K3 needs exactly 3 colors
+    assert(r.num_colors == 3); // needs exactly 3 colors
     std::cout << "PASSED\n";
 }
 
@@ -54,12 +50,11 @@ static void test_sequential_path() {
     Graph g = make_path(100);
     ColoringResult r = color_sequential(g);
     assert(verify_coloring(g, r.colors));
-    assert(r.num_colors <= 2);  // path graph is bipartite
+    assert(r.num_colors <= 2); // path graph is bipartite so needs 2 
     std::cout << "PASSED\n";
 }
 
-// --- Parallel speculative coloring tests ---
-
+// Parallel speculative coloring tests
 static void test_parallel_triangle() {
     std::cout << "test_parallel_triangle ... ";
     Graph g = make_triangle();
@@ -74,11 +69,11 @@ static void test_parallel_path() {
     Graph g = make_path(1000);
     ColoringResult r = color_parallel(g, 4);
     assert(verify_coloring(g, r.colors));
-    assert(r.num_colors <= 3);  // parallel may use 1 extra color
+    assert(r.num_colors <= 3); // parallel may use 1 extra color
     std::cout << "PASSED\n";
 }
 
-// --- Hybrid coloring tests ---
+//Hybrid coloring tests
 
 static void test_hybrid_triangle() {
     std::cout << "test_hybrid_triangle ... ";
@@ -98,7 +93,7 @@ static void test_hybrid_path() {
     std::cout << "PASSED\n";
 }
 
-// --- GPU coloring tests ---
+// GPU coloring tests
 
 #ifdef CUDA_ENABLED
 static void test_gpu_triangle() {
@@ -120,23 +115,23 @@ static void test_gpu_path() {
 }
 #endif
 
-// --- Verification tests ---
+// Verification tests to test if our verifier actually detects bad colorings 
 
 static void test_verify_detects_bad_coloring() {
     std::cout << "test_verify_detects_bad_coloring ... ";
     Graph g = make_triangle();
-    std::vector<int> bad_colors = {0, 0, 1};  // vertices 0 and 1 are adjacent, both color 0
+    std::vector<int> bad_colors = {0, 0, 1}; // vertices 0 and 1 are adjacent and same color
     assert(!verify_coloring(g, bad_colors));
     std::cout << "PASSED\n";
 }
 
-// --- Graph loading tests ---
+// raph loading tests
 
 static void test_load_edge_list() {
     std::cout << "test_load_edge_list ... ";
     Graph g = load_edge_list("graphs/test_100.txt");
     assert(g.num_vertices == 100);
-    assert(g.num_edges == 1000);  // 500 undirected edges -> 1000 directed
+    assert(g.num_edges == 1000); // 500 undirected edges = 1000 directed
     for (int i = 0; i < g.num_vertices; i++) {
         assert(g.row_offsets[i] <= g.row_offsets[i + 1]);
     }
@@ -175,6 +170,7 @@ int main() {
     test_parallel_path();
     test_hybrid_triangle();
     test_hybrid_path();
+    // only test if cuda enabled 
 #ifdef CUDA_ENABLED
     test_gpu_triangle();
     test_gpu_path();

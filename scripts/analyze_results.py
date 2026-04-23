@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Analyze benchmark results and compute derived metrics for the report.
+Helper to analyze benchmark results and compute metrics.
 
 Reads a benchmark CSV and outputs:
   - Speedup tables (compute-time and total-time, 1T parallel baseline)
@@ -17,7 +17,6 @@ import csv
 import sys
 import os
 from collections import defaultdict
-
 
 def load_csv(path):
     rows = []
@@ -50,10 +49,8 @@ def load_csv(path):
         sys.exit(1)
     return rows
 
-
 def graph_name(path):
     return os.path.splitext(os.path.basename(path))[0]
-
 
 def main():
     if len(sys.argv) < 2:
@@ -62,7 +59,6 @@ def main():
 
     rows = load_csv(sys.argv[1])
 
-    # Index: (graph, algo) -> {threads: row}
     data = defaultdict(dict)
     for r in rows:
         key = (graph_name(r["graph"]), r["algorithm"])
@@ -72,11 +68,18 @@ def main():
     graphs = sorted(set(graph_name(r["graph"]) for r in rows),
                     key=lambda g: next(r["vertices"] for r in rows if graph_name(r["graph"]) == g))
     algos = sorted(set(r["algorithm"] for r in rows))
-    # CPU thread sweep (excludes GPU, which uses threads=0 as a sentinel)
+    # CPU thread sweep (excludes GPU, which uses threads=0)
     threads = sorted(set(r["threads"] for r in rows if r["threads"] > 0))
 
     def is_gpu(algo):
         return algo.startswith("gpu")
+
+    def is_sequential(algo):
+        return algo == "sequential" or algo == "seq"
+
+    def is_single_config(algo):
+        """Algorithms that produce one row per graph (no thread sweep)."""
+        return is_gpu(algo) or is_sequential(algo)
 
     def gpu_row(g, algo):
         """Return the single GPU row for graph g (threads=0), or None."""
@@ -85,7 +88,23 @@ def main():
             return None
         return data[key].get(0)
 
-    # ===== 1. GRAPH CHARACTERISTICS =====
+    def seq_row(g):
+        """Return the sequential row for graph g (threads=1), or None."""
+        for name in ("sequential", "seq"):
+            key = (g, name)
+            if key in data and 1 in data[key]:
+                return data[key][1]
+        return None
+
+    def single_config_row(g, algo):
+        """Return the single row for non-swept algorithms like GPU/sequential."""
+        if is_gpu(algo):
+            return gpu_row(g, algo)
+        if is_sequential(algo):
+            return seq_row(g)
+        return None
+
+    # Section 1: GRAPH CHARACTERISTICS
     print("=" * 80)
     print("1. GRAPH CHARACTERISTICS")
     print("=" * 80)
@@ -105,10 +124,13 @@ def main():
 
     # ===== 2. COMPUTE-TIME SPEEDUP (1T baseline per algo) =====
     # GPU: compared against spec-1T baseline (a single GPU run per graph).
+    # Sequential: shown separately in Section 2b; not in this thread-sweep view.
     print("=" * 80)
     print("2. COMPUTE-TIME SPEEDUP (1T parallel = 1.00x baseline)")
     print("=" * 80)
     for algo in algos:
+        if is_sequential(algo):
+            continue
         if is_gpu(algo):
             print(f"\n--- Algorithm: {algo} (vs spec-1T compute-time baseline) ---")
             print(f"{'Graph':<20s} {'GPU speedup':>14s}")
@@ -146,12 +168,53 @@ def main():
             print(line)
     print()
 
+    # ===== 2b. SPEEDUP vs SEQUENTIAL GREEDY =====
+    # Compares every parallel/GPU algorithm at its best configuration (CPU
+    # algorithms at max threads, GPU as single-run) against pure sequential
+    # greedy coloring — the baseline used in Naumov (2015), Deveci (2016),
+    # and most GPU coloring literature.
+    if any(is_sequential(a) for a in algos) and threads:
+        print("=" * 80)
+        print("2b. SPEEDUP vs SEQUENTIAL GREEDY (compute-time; max threads for CPU)")
+        print("=" * 80)
+        max_t = max(threads)
+        cpu_algos = [a for a in algos if not is_single_config(a)]
+        gpu_algos = [a for a in algos if is_gpu(a)]
+        columns = [(a, f"{a}_{max_t}T") for a in cpu_algos] + [(a, a) for a in gpu_algos]
+
+        header = f"{'Graph':<20s} {'seq_ms':>10s}"
+        for _, label in columns:
+            header += f" {label + '_sp':>14s}"
+        print(header)
+        print("-" * len(header))
+        for g in graphs:
+            sr = seq_row(g)
+            if not sr:
+                continue
+            seq_t = sr["compute_time"]
+            line = f"{g:<20s} {seq_t * 1000:>10.3f}"
+            for algo, _ in columns:
+                if is_gpu(algo):
+                    gr = gpu_row(g, algo)
+                    t = gr["compute_time"] if gr else None
+                else:
+                    t = data.get((g, algo), {}).get(max_t, {}).get("compute_time")
+                if t and t > 0:
+                    line += f" {seq_t / t:>13.2f}x"
+                else:
+                    line += f" {'N/A':>14s}"
+            print(line)
+        print()
+
     # ===== 3. TOTAL-TIME SPEEDUP =====
     # GPU: compared against spec-1T total-time baseline.
+    # Sequential: shown separately in Section 2b.
     print("=" * 80)
     print("3. TOTAL-TIME SPEEDUP (1T parallel = 1.00x baseline)")
     print("=" * 80)
     for algo in algos:
+        if is_sequential(algo):
+            continue
         if is_gpu(algo):
             print(f"\n--- Algorithm: {algo} (vs spec-1T total-time baseline) ---")
             print(f"{'Graph':<20s} {'GPU speedup':>14s}")
@@ -196,7 +259,7 @@ def main():
     print("4. PARALLEL EFFICIENCY (speedup / threads, ideal = 1.00)")
     print("=" * 80)
     for algo in algos:
-        if is_gpu(algo):
+        if is_single_config(algo):
             continue
         print(f"\n--- Algorithm: {algo} (compute-time) ---")
         header = f"{'Graph':<20s}"
@@ -231,8 +294,10 @@ def main():
     max_t = max(threads) if threads else 0
     header = f"{'Graph':<20s}"
     for algo in algos:
-        if is_gpu(algo):
+        if is_single_config(algo):
             header += f" {algo:>10s}"
+        elif max_t == 1:
+            header += f" {algo + '_1T':>10s}"
         else:
             header += f" {algo + '_1T':>10s} {algo + '_' + str(max_t) + 'T':>10s}"
     print(header)
@@ -241,16 +306,22 @@ def main():
         line = f"{g:<20s}"
         for algo in algos:
             key = (g, algo)
-            if is_gpu(algo):
-                gr = gpu_row(g, algo)
-                line += f" {(gr['colors'] if gr else 'N/A'):>10}"
+            if is_single_config(algo):
+                r = single_config_row(g, algo)
+                line += f" {(r['colors'] if r else 'N/A'):>10}"
             elif key in data:
                 d = data[key]
                 c1 = d.get(1, {}).get("colors", "N/A")
-                cn = d.get(max_t, {}).get("colors", "N/A")
-                line += f" {str(c1):>10s} {str(cn):>10s}"
+                if max_t == 1:
+                    line += f" {str(c1):>10s}"
+                else:
+                    cn = d.get(max_t, {}).get("colors", "N/A")
+                    line += f" {str(c1):>10s} {str(cn):>10s}"
             else:
-                line += f" {'N/A':>10s} {'N/A':>10s}"
+                if max_t == 1:
+                    line += f" {'N/A':>10s}"
+                else:
+                    line += f" {'N/A':>10s} {'N/A':>10s}"
         print(line)
     print()
 
@@ -262,14 +333,14 @@ def main():
     for algo in algos:
         if algo == "jp":
             continue  # JP has no conflicts
-        if is_gpu(algo):
+        if is_single_config(algo):
             print(f"\n--- Algorithm: {algo} ---")
             print(f"{'Graph':<20s} {'conflict_rate':>14s}")
             print("-" * 36)
             for g in graphs:
-                gr = gpu_row(g, algo)
-                if gr:
-                    print(f"{g:<20s} {gr['conflict_rate']:>13.3f}%")
+                r = single_config_row(g, algo)
+                if r:
+                    print(f"{g:<20s} {r['conflict_rate']:>13.3f}%")
                 else:
                     print(f"{g:<20s} {'N/A':>14s}")
             continue
@@ -299,14 +370,14 @@ def main():
     print("7. ROUNDS TO CONVERGENCE")
     print("=" * 80)
     for algo in algos:
-        if is_gpu(algo):
+        if is_single_config(algo):
             print(f"\n--- Algorithm: {algo} ---")
             print(f"{'Graph':<20s} {'rounds':>8s}")
             print("-" * 30)
             for g in graphs:
-                gr = gpu_row(g, algo)
-                if gr:
-                    print(f"{g:<20s} {gr['rounds']:>8d}")
+                r = single_config_row(g, algo)
+                if r:
+                    print(f"{g:<20s} {r['rounds']:>8d}")
                 else:
                     print(f"{g:<20s} {'N/A':>8s}")
             continue
@@ -341,16 +412,16 @@ def main():
         header = f"{'Graph':<20s} {'T':>3s} {'init_ms':>10s} {'comp_ms':>10s} {'total_ms':>10s} {'init%':>7s} {'comp%':>7s}"
         print(header)
         print("-" * 67)
-        if is_gpu(algo):
+        if is_single_config(algo):
             for g in graphs:
-                gr = gpu_row(g, algo)
-                if not gr:
+                r = single_config_row(g, algo)
+                if not r:
                     continue
-                init_ms = gr["init_time"] * 1000
-                comp_ms = gr["compute_time"] * 1000
-                total_ms = gr["total_time"] * 1000
-                init_pct = gr["init_time"] / gr["total_time"] * 100 if gr["total_time"] > 0 else 0
-                comp_pct = gr["compute_time"] / gr["total_time"] * 100 if gr["total_time"] > 0 else 0
+                init_ms = r["init_time"] * 1000
+                comp_ms = r["compute_time"] * 1000
+                total_ms = r["total_time"] * 1000
+                init_pct = r["init_time"] / r["total_time"] * 100 if r["total_time"] > 0 else 0
+                comp_pct = r["compute_time"] / r["total_time"] * 100 if r["total_time"] > 0 else 0
                 print(f"{g:<20s} {'—':>3s} {init_ms:>10.3f} {comp_ms:>10.3f} {total_ms:>10.3f} {init_pct:>6.1f}% {comp_pct:>6.1f}%")
             continue
         for g in graphs:
@@ -406,10 +477,10 @@ def main():
         line = f"{g:<20s}"
         times = {}
         for algo in algos:
-            if is_gpu(algo):
-                gr = gpu_row(g, algo)
-                if gr:
-                    t_ms = gr["total_time"] * 1000
+            if is_single_config(algo):
+                r = single_config_row(g, algo)
+                if r:
+                    t_ms = r["total_time"] * 1000
                     times[algo] = t_ms
                     line += f" {t_ms:>10.3f}"
                 else:

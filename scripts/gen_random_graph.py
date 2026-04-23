@@ -5,9 +5,8 @@ import argparse
 import random
 import sys
 
-
+# Generate an Erdos-Renyi random graph with n vertices and m edges.
 def gen_erdos_renyi(n, m, rng):
-    """Generate an Erdos-Renyi random graph with n vertices and m edges."""
     edges = set()
     while len(edges) < m:
         u = rng.randint(0, n - 1)
@@ -16,12 +15,12 @@ def gen_erdos_renyi(n, m, rng):
             edges.add((min(u, v), max(u, v)))
     return edges
 
-
+# Generate an R-MAT power-law graph (Kronecker-style) with n vertices and m edges.
 def gen_rmat(n, m, rng, a=0.57, b=0.19, c=0.19):
-    """Generate an R-MAT power-law graph (Kronecker-style) with n vertices and m edges."""
+
     d = 1.0 - a - b - c
     edges = set()
-    # n must be power of 2 for pure R-MAT; we'll use ceiling log2
+    # n must be power of 2 for pure R-MAT
     bits = max(1, (n - 1).bit_length())
     actual_n = 1 << bits
     while len(edges) < m:
@@ -29,7 +28,7 @@ def gen_rmat(n, m, rng, a=0.57, b=0.19, c=0.19):
         for depth in range(bits):
             r = rng.random()
             if r < a:
-                pass  # quadrant (0,0)
+                pass # quadrant (0,0)
             elif r < a + b:
                 v += 1 << (bits - 1 - depth)
             elif r < a + b + c:
@@ -44,9 +43,8 @@ def gen_rmat(n, m, rng, a=0.57, b=0.19, c=0.19):
             edges.add((min(u, v), max(u, v)))
     return edges
 
-
-def gen_2d_grid(side):
-    """Generate a 2D grid graph of side x side vertices."""
+# Generate a 2D grid graph of side x side vertices.
+def gen_2d_grid(side): 
     n = side * side
     edges = set()
     for r in range(side):
@@ -93,7 +91,6 @@ def main():
         out.write(f"{u} {v}\n")
     if args.output:
         out.close()
-
 
 if __name__ == "__main__":
     main()

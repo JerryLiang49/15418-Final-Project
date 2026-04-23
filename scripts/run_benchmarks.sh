@@ -37,7 +37,7 @@ if [ "${THREADS[$last_idx]}" -ne "$MAX_THREADS" ]; then
     THREADS+=("$MAX_THREADS")
 fi
 
-# Algorithms to benchmark (JP removed — poor scaling, see report)
+# Thread-swept CPU algorithms (JP removed — poor scaling, see report)
 ALGORITHMS=("spec" "hybrid")
 
 GRAPHS=(
@@ -70,13 +70,32 @@ echo "graph,vertices,edges,threads,algorithm,max_deg,avg_deg,cv_deg,colors,confl
 
 echo "Running benchmarks..."
 echo "Thread counts: ${THREADS[*]}"
-echo "Algorithms: ${ALGORITHMS[*]}"
+echo "Algorithms: sequential ${ALGORITHMS[*]} gpu gpu-edge"
 echo "Graphs: ${#AVAILABLE_GRAPHS[@]}"
 echo "OMP_PROC_BIND=$OMP_PROC_BIND  OMP_PLACES=$OMP_PLACES"
 echo "Output: $OUTFILE"
 echo ""
 
 FAIL=0
+
+# Sequential baseline: single run per graph (no thread sweep; threads field is
+# written as 1 for consistency with CSV parsing). This is the pure-greedy
+# baseline that literature typically compares GPU/parallel speedups against.
+echo "--- Algorithm: sequential ---"
+for graph in "${AVAILABLE_GRAPHS[@]}"; do
+    echo -n "  $graph (sequential) ... "
+    result=$("$BINARY" "$graph" 1 --csv --algorithm sequential 2>&1) || true
+    echo "$result" >> "$OUTFILE"
+    valid=$(echo "$result" | awk -F',' '{print $NF}')
+    if [ "$valid" = "yes" ]; then
+        echo "OK"
+    else
+        echo "INVALID COLORING!"
+        FAIL=1
+    fi
+done
+echo ""
+
 for algo in "${ALGORITHMS[@]}"; do
     echo "--- Algorithm: $algo ---"
     for graph in "${AVAILABLE_GRAPHS[@]}"; do

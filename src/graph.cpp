@@ -6,12 +6,12 @@
 #include <stdexcept>
 #include <utility>
 
-// Helper: build CSR from an edge pair list (already contains both directions)
+// Helper to build CSR from an edge pair list
 static Graph build_csr(int n, std::vector<std::pair<int, int>>& edges) {
-    std::sort(edges.begin(), edges.end());
-    edges.erase(std::unique(edges.begin(), edges.end()), edges.end());
-
     Graph g;
+    std::sort(edges.begin(), edges.end());
+    edges.erase(std::unique(edges.begin(), edges.end()), edges.end()); // Remove duplicate entries
+
     g.num_vertices = n;
     g.num_edges = static_cast<int>(edges.size());
     g.row_offsets.resize(n + 1, 0);
@@ -32,6 +32,7 @@ static Graph build_csr(int n, std::vector<std::pair<int, int>>& edges) {
     return g;
 }
 
+// Load graph from edge list file to CSR format
 Graph load_edge_list(const std::string& filename) {
     std::ifstream in(filename);
     if (!in.is_open()) {
@@ -53,6 +54,7 @@ Graph load_edge_list(const std::string& filename) {
     return build_csr(n, edges);
 }
 
+// Load graph from metis file to CSR format 
 Graph load_metis(const std::string& filename) {
     std::ifstream in(filename);
     if (!in.is_open()) {
@@ -61,13 +63,15 @@ Graph load_metis(const std::string& filename) {
 
     std::string line;
 
-    // Skip comment lines (start with '%')
+    // Skip comment lines 
     int n = 0, m = 0, fmt = 0;
     while (std::getline(in, line)) {
         if (line.empty() || line[0] == '%') continue;
         std::istringstream iss(line);
         iss >> n >> m;
-        if (iss >> fmt) { /* optional fmt field */ }
+        if (iss >> fmt) {
+            /* optional fmt field */ 
+        }
         break;
     }
 
@@ -75,7 +79,8 @@ Graph load_metis(const std::string& filename) {
         throw std::runtime_error("Invalid METIS header in: " + filename);
     }
 
-    // fmt flags: 0 = no weights, 1 = edge weights, 10 = vertex weights, 11 = both
+    // fmt flags 
+    // 0 = no weights, 1 = edge weights, 10 = vertex weights, 11 = both
     bool has_edge_weights = (fmt == 1 || fmt == 11);
     bool has_vertex_weights = (fmt == 10 || fmt == 11);
 
@@ -119,6 +124,7 @@ static bool ends_with(const std::string& s, const std::string& suffix) {
                       });
 }
 
+// Load any graph format by calling helpers 
 Graph load_graph(const std::string& filename) {
     if (ends_with(filename, ".graph") || ends_with(filename, ".metis")) {
         return load_metis(filename);
