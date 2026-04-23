@@ -12,6 +12,11 @@ test_runner
 results/*.csv
 build.log
 
+# Markdown notes/drafts (keep READMEs trackable)
+*.md
+!README.md
+!**/README.md
+
 # Editor / OS scratch
 *.swp
 .DS_Store
