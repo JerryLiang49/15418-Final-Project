@@ -350,8 +350,9 @@
         <h1>Parallel Graph Coloring</h1>
         <p class="subtitle"><strong>Team Members:</strong> Zhanming (Jerry) Liang, Harry Hu</p>
         <div class="quick-links">
-          <span class="pill"><strong>Project URL:</strong>&nbsp;[Paste website URL here]</span>
-          <span class="pill"><strong>Platform:</strong>&nbsp;[CPU / GPU / OpenMP / CUDA / MPI]</span>
+          <a class="pill" href="docs/Final%20Project%20Report.pdf"><strong>Final Report (PDF)</strong></a>
+          <a class="pill" href="docs/Final%20Project%20Poster.pptx.pdf"><strong>Final Poster (PDF)</strong></a>
+          <span class="pill"><strong>Platform:</strong>&nbsp;OpenMP CPU + CUDA GPU</span>
           <a class="pill" href="docs/milestone_report.pdf"><strong>Milestone Report (PDF)</strong></a>
         </div>
       </div>
@@ -367,7 +368,11 @@
           <li><a href="#resources">Resources</a></li>
           <li><a href="#goals">Goals and Deliverables</a></li>
           <li><a href="#platform">Platform Choice</a></li>
+          <li><a href="#report">Final Report</a></li>
+          <li><a href="#poster">Final Poster</a></li>
           <li><a href="#schedule">Schedule</a></li>
+          <li><a href="docs/Final%20Project%20Report.pdf">Final Report PDF</a></li>
+          <li><a href="docs/Final%20Project%20Poster.pptx.pdf">Final Poster PDF</a></li>
           <li><a href="docs/milestone_report.pdf">Milestone Report</a></li>
         </ul>
       </aside>
@@ -490,6 +495,18 @@
           <h2>Platform Choice</h2>
           <p>We chose a shared-memory multicore CPU platform with OpenMP because it is a natural fit for the graph coloring workload and aligns well with techniques covered in class. Graph coloring requires frequent access to neighboring vertices’ colors, so a shared-memory model avoids the complexity and duplication that would come with distributed-memory implementations. OpenMP also provides a practical framework for parallelizing irregular workloads while letting us experiment with scheduling strategies and synchronization choices.</p>
           <p>C++ is a good choice because it gives us control over graph representation, memory layout, and performance-critical implementation details. Since graph coloring performance is likely to be influenced by cache behavior, contention, and adjacency traversal overhead, using a low-level language makes it easier to optimize and analyze these effects. Overall, a multicore CPU implementation is the right balance of ambition and feasibility for this project: the problem is irregular enough to be interesting, but still tractable with the tools and systems we have used in class.</p>
+        </section>
+
+        <section class="card" id="report">
+          <h2>Final Report</h2>
+          <p>Our final report documents the full project, including the CPU OpenMP implementation, CUDA GPU comparison, benchmark methodology, results analysis, and final conclusions.</p>
+          <p><a href="docs/Final%20Project%20Report.pdf"><strong>Download the Final Project Report (PDF)</strong></a></p>
+        </section>
+
+        <section class="card" id="poster">
+          <h2>Final Poster</h2>
+          <p>Our poster summarizes the project motivation, approach, benchmark results, and final takeaways in a compact visual format for the poster session.</p>
+          <p><a href="docs/Final%20Project%20Poster.pptx.pdf"><strong>View the Final Poster (PDF)</strong></a></p>
         </section>
 
         <section class="card" id="schedule">
